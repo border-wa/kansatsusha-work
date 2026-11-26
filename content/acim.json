@@ -1,0 +1,61 @@
+{
+  "_説明": "ACIM(奇跡のコース)の原文を入れる場所です。en が空のあいだは、画面に「準備中」と出ます。英文は acim.org から貼りつけてください。記憶で書いた英文は入れません。",
+  "home": "https://acim.org/acim/en",
+  "passages": {
+    "W-5": {
+      "ja": "ワークブック 第5課。動揺の理由は、自分が思っている所にはない。",
+      "url": "https://lessons.acim.org/en/chapters/lesson-5",
+      "en": ""
+    },
+    "W-7": {
+      "ja": "ワークブック 第7課。私は過去だけを見ている。",
+      "url": "https://lessons.acim.org/en/chapters/lesson-7",
+      "en": ""
+    },
+    "W-21": {
+      "ja": "ワークブック 第21課。私は、違ったふうに見ることを選ぶ。",
+      "url": "https://lessons.acim.org/en/chapters/lesson-21",
+      "en": ""
+    },
+    "W-94": {
+      "ja": "ワークブック 第94課。私は、神が創造したままの私である。",
+      "url": "https://lessons.acim.org/en/chapters/lesson-94",
+      "en": ""
+    },
+    "W-110": {
+      "ja": "ワークブック 第110課。私は、神が創造したままの私である。",
+      "url": "https://lessons.acim.org/en/chapters/lesson-110",
+      "en": ""
+    },
+    "W-304": {
+      "ja": "ワークブック 第304課。知覚は、心の中を映す鏡である。",
+      "url": "https://lessons.acim.org/en/chapters/lesson-304",
+      "en": ""
+    },
+    "T-9.III.3": {
+      "ja": "テキスト 第9章 III節 3段落。",
+      "url": "https://acim.org/acim/en",
+      "en": ""
+    },
+    "T-21.in.1": {
+      "ja": "テキスト 第21章 序 1段落。投影が知覚を作る。",
+      "url": "https://acim.org/acim/en",
+      "en": ""
+    },
+    "T-26.VII.4": {
+      "ja": "テキスト 第26章 VII節 4段落。",
+      "url": "https://acim.org/acim/en",
+      "en": ""
+    },
+    "T-27.VIII.10": {
+      "ja": "テキスト 第27章 VIII節 10段落。",
+      "url": "https://acim.org/acim/en",
+      "en": ""
+    },
+    "M-10.2": {
+      "ja": "教師のためのマニュアル 第10節 2段落。裁きについて。",
+      "url": "https://acim.org/acim/en",
+      "en": ""
+    }
+  }
+}

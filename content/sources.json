@@ -1,0 +1,23 @@
+{
+  "title": "出典",
+  "krishnamurti": {
+    "heading": "クリシュナムルティ",
+    "summary": "(要約)怒りを見ている「観察者」は、怒りとは別の、外に立つ者ではない。観察者も、過去の記憶からできた思考の一部であり、観察者は観察されるものそのものである。",
+    "note": "ここに書いたのは要約です。原文は、下の Krishnamurti Foundation Trust のページで読めます(英語)。",
+    "links": [
+      { "text": "Freedom from the Known ― The observer is also an image", "url": "https://kfoundation.org/krishnamurti-freedom-from-the-known-the-observer-is-also-an-image" },
+      { "text": "To Be Human ― The observer is the past", "url": "https://kfoundation.org/krishnamurti-the-observer-is-the-past-%C2%B7-from-to-be-human/" },
+      { "text": "The Awakening of Intelligence ― Can you look without the observer?", "url": "https://kfoundation.org/krishnamurti-the-awakening-of-intelligence-can-you-look-without-the-observer" },
+      { "text": "Krishnamurti Foundation Trust の記事", "url": "https://kfoundation.org/?p=4047" }
+    ]
+  },
+  "acim": {
+    "heading": "奇跡のコース(ACIM)",
+    "note": "原文(英語)は、公式サイトで読めます。このアプリの原文欄は、公式サイトから貼りつけたものだけを載せます。",
+    "copyright": "A Course in Miracles の著作権は、Foundation for Inner Peace にあります。",
+    "links": [
+      { "text": "A Course in Miracles 公式サイト(全文)", "url": "https://acim.org/acim/en" },
+      { "text": "ワークブックのレッスン一覧", "url": "https://lessons.acim.org/en/chapters" }
+    ]
+  }
+}

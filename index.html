@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1f22" media="(prefers-color-scheme: dark)">
+  <title>観察者は観察対象である</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="topbar-back" id="back" type="button" hidden aria-label="戻る">‹</button>
+    <h1 class="topbar-title" id="title"></h1>
+  </header>
+
+  <p class="storage-note" id="storage-note" hidden></p>
+
+  <main id="view" tabindex="-1"></main>
+
+  <nav class="tabs" id="tabs" aria-label="画面の切り替え">
+    <a href="#/home" data-tab="home"><span class="tab-icon" aria-hidden="true">◯</span><span class="tab-label"></span></a>
+    <a href="#/guide" data-tab="guide"><span class="tab-icon" aria-hidden="true">☰</span><span class="tab-label"></span></a>
+    <a href="#/practices" data-tab="practices"><span class="tab-icon" aria-hidden="true">◎</span><span class="tab-label"></span></a>
+    <a href="#/records" data-tab="records"><span class="tab-icon" aria-hidden="true">✎</span><span class="tab-label"></span></a>
+  </nav>
+
+  <script src="js/storage.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
