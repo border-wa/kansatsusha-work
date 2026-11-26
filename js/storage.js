@@ -65,6 +65,42 @@
     remove("draft." + no);
   }
 
+  /* ---- 「今日、見えたこと」の記録 ----
+     一件の形：
+       { id, t(日付と時刻), no(実習の番号。なければ null),
+         text(本文), blind(「見えなかった」の印), from("write" | "practice" | "pause"),
+         fields([{k: 欄の名前, v: 書いたこと}]) } */
+  function newId() {
+    return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function getRecords() {
+    var list = get("records", []);
+    return Array.isArray(list) ? list : [];
+  }
+  function saveRecords(list) {
+    list.sort(function (a, b) { return a.t < b.t ? 1 : a.t > b.t ? -1 : 0; });
+    return set("records", list);
+  }
+  function addRecord(r) {
+    var list = getRecords();
+    r.id = r.id || newId();
+    r.t = r.t || new Date().toISOString();
+    list.push(r);
+    return saveRecords(list);
+  }
+  function updateRecord(id, patch) {
+    var list = getRecords();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) {
+        for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) list[i][k] = patch[k];
+      }
+    }
+    return saveRecords(list);
+  }
+  function removeRecord(id) {
+    return saveRecords(getRecords().filter(function (r) { return r.id !== id; }));
+  }
+
   window.Store = {
     available: function () { return available; },
     get: get,
@@ -72,6 +108,10 @@
     remove: remove,
     getDraft: getDraft,
     saveDraft: saveDraft,
-    clearDraft: clearDraft
+    clearDraft: clearDraft,
+    getRecords: getRecords,
+    addRecord: addRecord,
+    updateRecord: updateRecord,
+    removeRecord: removeRecord
   };
 })();

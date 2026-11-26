@@ -146,6 +146,21 @@
     return Object.keys(values || {}).some(function (k) { return values[k] && values[k].trim(); });
   }
 
+  /* 実習で書いたことを、記録の形 [{k, v}] にする */
+  function practiceFields(p, values) {
+    var out = [];
+    p.steps.forEach(function (st) {
+      (st.fields || []).forEach(function (f) {
+        var v = (values[f.id] || "").trim();
+        if (!v) return;
+        var label = f.label;
+        if (f.ref && (values[f.ref] || "").trim()) label += "(" + values[f.ref].trim() + ")";
+        out.push({ k: label, v: v });
+      });
+    });
+    return out;
+  }
+
   /* 書いたことを、Markdown の文章にする */
   function practiceMarkdown(p) {
     var values = Store.getDraft(p.no).values || {};
@@ -233,7 +248,7 @@
       "</div>";
     });
 
-    if (st.timer) s += '<p class="gentle small">' + R.rich(u.timerPending) + "</p>";
+    if (st.timer) s += '<div id="timer-slot"></div>';
     if (st.prayer) s += '<p class="prayer">' + R.rich(st.prayer) + "</p>";
 
     var prev = n > 1 ? "#/practice/" + p.no + "/" + (n - 1) : "#/practice/" + p.no;
@@ -248,6 +263,7 @@
     wrap.appendChild(frag);
     if (hasFields(p)) wrap.appendChild(R.copyBox(function () { return practiceMarkdown(p); }, C.ui));
     show(wrap);
+    if (st.timer) document.getElementById("timer-slot").appendChild(R.timer(st.timer, C.ui));
 
     view.querySelectorAll("textarea[data-id]").forEach(function (ta) {
       ta.addEventListener("input", function () {
@@ -271,6 +287,14 @@
     if (p.acimNote) s += "<p>" + R.rich(p.acimNote) + "</p>";
     (p.acim || []).forEach(function (ref) { s += R.acimBlock(ref, C.acim, C.ui); });
 
+    var d0 = Store.getDraft(p.no);
+    s += '<div class="field"><label for="seen">' + R.rich(u.seenLabel) + "</label>" +
+      '<textarea id="seen" rows="3">' + R.esc(d0.seen || "") + "</textarea></div>" +
+      '<label class="check-row"><input type="checkbox" id="blind"' + (d0.blind ? " checked" : "") + "> " +
+        R.rich(C.ui.records.blind) + "</label>" +
+      '<button type="button" class="btn btn-main" id="save-record">' + R.rich(u.saveRecord) + "</button>" +
+      '<p class="copy-msg" id="save-msg" role="status" aria-live="polite"></p>';
+
     var wrap = document.createElement("div");
     wrap.appendChild(R.html(s));
     if (hasFields(p)) wrap.appendChild(R.copyBox(function () { return practiceMarkdown(p); }, C.ui));
@@ -280,9 +304,31 @@
     ));
     show(wrap);
 
+    function keepEnd() {
+      var d = Store.getDraft(p.no);
+      d.seen = document.getElementById("seen").value;
+      d.blind = document.getElementById("blind").checked;
+      Store.saveDraft(p.no, d);
+    }
+    document.getElementById("seen").addEventListener("input", keepEnd);
+    document.getElementById("blind").addEventListener("change", keepEnd);
+    document.getElementById("save-record").addEventListener("click", function () {
+      var d = Store.getDraft(p.no);
+      var fields = practiceFields(p, d.values || {});
+      var text = (document.getElementById("seen").value || "").trim();
+      var blind = document.getElementById("blind").checked;
+      var msg = document.getElementById("save-msg");
+      if (!text && !blind && !fields.length) { msg.textContent = C.ui.records.emptyText; return; }
+      Store.addRecord({ no: p.no, text: text, blind: blind, from: "practice", fields: fields });
+      Store.clearDraft(p.no);
+      document.getElementById("seen").value = "";
+      document.getElementById("blind").checked = false;
+      msg.textContent = u.savedRecord;
+    });
+
     document.getElementById("again").addEventListener("click", function () {
       var d = Store.getDraft(p.no);
-      if (hasValues(d.values) &&
+      if ((hasValues(d.values) || (d.seen || "").trim()) &&
           !confirm(u.confirmAgain)) {
         return;
       }
@@ -301,20 +347,181 @@
       '<div class="pause-view">' +
         '<p class="pause-q">' + R.rich(u.question) + "</p>" +
         '<div class="breath" aria-hidden="true"><span></span></div>' +
+        '<div class="pause-memo" id="pause-memo" hidden>' +
+          '<textarea id="pause-text" rows="2" aria-label="' + R.esc(u.memo) + '" placeholder="' + R.esc(u.memoPlaceholder) + '"></textarea>' +
+          '<button type="button" class="btn btn-main" id="pause-save">' + R.rich(u.memoSave) + "</button>" +
+        "</div>" +
+        '<p class="copy-msg" id="pause-msg" role="status" aria-live="polite"></p>' +
         '<div class="btn-row">' +
           '<a class="btn" href="#/home">' + R.rich(u.close) + "</a>" +
-          '<a class="btn" href="#/records">' + R.rich(u.memo) + "</a>" +
+          '<button type="button" class="btn" id="pause-open-memo">' + R.rich(u.memo) + "</button>" +
         "</div>" +
       "</div>"
     );
+    document.getElementById("pause-open-memo").addEventListener("click", function () {
+      document.getElementById("pause-memo").hidden = false;
+      this.hidden = true;
+      document.getElementById("pause-text").focus();
+    });
+    document.getElementById("pause-save").addEventListener("click", function () {
+      var ta = document.getElementById("pause-text");
+      var v = ta.value.trim();
+      if (!v) { ta.focus(); return; }
+      Store.addRecord({ no: null, text: v, blind: false, from: "pause", fields: [] });
+      ta.value = "";
+      document.getElementById("pause-memo").hidden = true;
+      document.getElementById("pause-open-memo").hidden = false;
+      document.getElementById("pause-msg").textContent = u.memoSaved;
+    });
   }
 
   /* =======================================================
-     記録・自己点検・設定(次の段階で中身が入ります)
+     記録(今日、見えたこと)・自己点検・設定
      ======================================================= */
+  var recFilter = null;
+
+  function recordMarkdown(r) {
+    var u = C.ui.records;
+    var p = r.no ? findPractice(r.no) : null;
+    var head = "### " + R.stamp(new Date(r.t));
+    if (p) head += " " + C.ui.practice.label + p.no + " " + p.title;
+    else if (r.from === "pause") head += " " + u.fromPause;
+    var out = [head];
+    (r.fields || []).forEach(function (f) { out.push("- " + f.k + "：" + String(f.v).replace(/\n/g, "\n  ")); });
+    if (r.blind) out.push(u.blind);
+    if (r.text) out.push(r.text);
+    return out.join("\n");
+  }
+
+  function practiceChips(name, selected, withAll) {
+    var u = C.ui.records;
+    var s = '<div class="chips" role="radiogroup">';
+    var first = withAll ? u.filterAll : u.none;
+    s += '<label class="chip"><input type="radio" name="' + name + '" value=""' + (selected == null ? " checked" : "") + "><span>" + R.rich(first) + "</span></label>";
+    C.practices.practices.forEach(function (p) {
+      s += '<label class="chip"><input type="radio" name="' + name + '" value="' + p.no + '"' + (selected == p.no ? " checked" : "") +
+        ' aria-label="' + R.esc(C.ui.practice.label + p.no + " " + p.title) + '"><span>' + p.no + "</span></label>";
+    });
+    return s + "</div>";
+  }
+
   function viewRecords() {
-    setFrame({ tab: "records", title: C.ui.records.title });
-    show('<p class="muted">' + R.rich(C.ui.records.pending) + "</p>");
+    var u = C.ui.records;
+    setFrame({ tab: "records", title: u.title });
+    var draft = Store.get("draft.write", { text: "", no: null, blind: false });
+
+    var all = Store.getRecords();
+    var list = all.filter(function (r) { return recFilter == null || r.no == recFilter; });
+
+    var s =
+      '<div class="field"><label for="w-text">' + R.rich(u.formLabel) + "</label>" +
+      '<textarea id="w-text" rows="3" placeholder="' + R.esc(u.placeholder) + '">' + R.esc(draft.text) + "</textarea></div>" +
+      '<p class="muted small">' + R.rich(u.practiceLabel) + "</p>" + practiceChips("w-no", draft.no, false) +
+      '<label class="check-row"><input type="checkbox" id="w-blind"' + (draft.blind ? " checked" : "") + "> " + R.rich(u.blind) + "</label>" +
+      '<p class="muted small">' + R.rich(u.blindNote) + "</p>" +
+      '<button type="button" class="btn btn-main" id="w-save">' + R.rich(u.save) + "</button>" +
+      '<p class="copy-msg" id="w-msg" role="status" aria-live="polite"></p>';
+
+    if (all.length) s += '<hr class="sep">' + practiceChips("f-no", recFilter, true);
+
+    if (!all.length) s += '<p class="muted">' + R.rich(u.empty) + "</p>";
+    else if (!list.length) s += '<p class="muted">' + R.rich(u.emptyFilter) + "</p>";
+
+    s += '<div id="rec-list">' + list.map(function (r) {
+      var p = r.no ? findPractice(r.no) : null;
+      var tags = [];
+      if (p) tags.push(C.ui.practice.label + p.no);
+      if (r.from === "pause") tags.push(u.fromPause);
+      if (r.blind) tags.push(u.blind);
+      return '<div class="rec" data-id="' + R.esc(r.id) + '">' +
+        '<p class="rec-meta">' + R.esc(R.stamp(new Date(r.t))) + (tags.length ? "　" + R.rich(tags.join("・")) : "") + "</p>" +
+        ((r.fields || []).length ? '<p class="rec-fields">' + r.fields.map(function (f) { return R.rich(f.k) + "：" + R.rich(f.v); }).join("<br>") + "</p>" : "") +
+        (r.text ? '<p class="rec-text">' + R.rich(r.text) + "</p>" : "") +
+        '<div class="rec-acts">' +
+          '<button type="button" data-a="edit">' + R.rich(u.edit) + "</button>" +
+          '<button type="button" data-a="del">' + R.rich(u.delete) + "</button>" +
+        "</div>" +
+      "</div>";
+    }).join("") + "</div>";
+
+    var wrap = document.createElement("div");
+    wrap.appendChild(R.html(s));
+    if (list.length) {
+      var copyUi = Object.assign({}, C.ui, { copy: Object.assign({}, C.ui.copy, { button: u.copyAll }) });
+      wrap.appendChild(R.copyBox(function () { return list.map(recordMarkdown).join("\n\n") + "\n"; }, copyUi));
+    }
+    show(wrap);
+
+    function keep() {
+      var no = view.querySelector('input[name="w-no"]:checked');
+      Store.set("draft.write", {
+        text: document.getElementById("w-text").value,
+        no: no && no.value ? +no.value : null,
+        blind: document.getElementById("w-blind").checked
+      });
+    }
+    document.getElementById("w-text").addEventListener("input", keep);
+    document.getElementById("w-blind").addEventListener("change", keep);
+    view.querySelectorAll('input[name="w-no"]').forEach(function (i) { i.addEventListener("change", keep); });
+
+    document.getElementById("w-save").addEventListener("click", function () {
+      keep();
+      var d = Store.get("draft.write", {});
+      var text = (d.text || "").trim();
+      if (!text && !d.blind) { document.getElementById("w-msg").textContent = u.emptyText; return; }
+      Store.addRecord({ no: d.no || null, text: text, blind: !!d.blind, from: "write", fields: [] });
+      Store.remove("draft.write");
+      viewRecords();
+      document.getElementById("w-msg").textContent = u.saved;
+    });
+
+    view.querySelectorAll('input[name="f-no"]').forEach(function (i) {
+      i.addEventListener("change", function () { recFilter = i.value ? +i.value : null; viewRecords(); });
+    });
+
+    view.querySelectorAll(".rec").forEach(function (el) {
+      var id = el.dataset.id;
+      el.querySelector('[data-a="del"]').addEventListener("click", function () {
+        if (confirm(u.confirmDelete)) { Store.removeRecord(id); viewRecords(); }
+      });
+      el.querySelector('[data-a="edit"]').addEventListener("click", function () { editRecord(el, id); });
+    });
+  }
+
+  function editRecord(el, id) {
+    var u = C.ui.records;
+    var r = Store.getRecords().filter(function (x) { return x.id === id; })[0];
+    if (!r) return;
+    var s = '<p class="rec-meta">' + R.esc(R.stamp(new Date(r.t))) + "</p>";
+    (r.fields || []).forEach(function (f, i) {
+      s += '<div class="field"><label for="e-f' + i + '">' + R.rich(f.k) + "</label>" +
+        '<textarea id="e-f' + i + '" data-i="' + i + '" rows="2">' + R.esc(f.v) + "</textarea></div>";
+    });
+    s += '<div class="field"><label for="e-text">' + R.rich(u.formLabel) + "</label>" +
+      '<textarea id="e-text" rows="3">' + R.esc(r.text) + "</textarea></div>" +
+      '<p class="muted small">' + R.rich(u.practiceLabel) + "</p>" + practiceChips("e-no", r.no, false) +
+      '<label class="check-row"><input type="checkbox" id="e-blind"' + (r.blind ? " checked" : "") + "> " + R.rich(u.blind) + "</label>" +
+      '<div class="btn-row">' +
+        '<button type="button" class="btn" id="e-cancel">' + R.rich(u.cancel) + "</button>" +
+        '<button type="button" class="btn btn-main" id="e-save">' + R.rich(u.saveEdit) + "</button>" +
+      "</div>";
+    el.innerHTML = "";
+    el.appendChild(R.html(s));
+    el.querySelector("#e-cancel").addEventListener("click", viewRecords);
+    el.querySelector("#e-save").addEventListener("click", function () {
+      var fields = (r.fields || []).map(function (f, i) {
+        return { k: f.k, v: el.querySelector('[data-i="' + i + '"]').value.trim() };
+      }).filter(function (f) { return f.v; });
+      var no = el.querySelector('input[name="e-no"]:checked');
+      Store.updateRecord(id, {
+        text: el.querySelector("#e-text").value.trim(),
+        blind: el.querySelector("#e-blind").checked,
+        no: no && no.value ? +no.value : null,
+        fields: fields
+      });
+      viewRecords();
+    });
+    el.querySelector("#e-text").focus();
   }
 
   function viewCheck() {
@@ -359,6 +566,7 @@
      どの画面を出すか
      ======================================================= */
   function route() {
+    R.stopTimers();
     var parts = (location.hash || "#/home").replace(/^#\/?/, "").split("/");
     var page = parts[0] || "home";
     switch (page) {

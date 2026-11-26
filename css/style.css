@@ -264,3 +264,52 @@ details[open] summary { margin-bottom: 6px; }
   .breath span { animation-duration: 16s; }
 }
 .pause-view .btn-row { width: 100%; }
+
+/* ---- 実習番号などを選ぶ丸いボタン ---- */
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 12px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 40px; padding: 0 8px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); font-size: .95rem;
+}
+.chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.check-row { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 4px 0; cursor: pointer; }
+.check-row input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 26px 0 14px; }
+
+/* ---- 記録の一覧 ---- */
+.rec { border-bottom: 1px solid var(--line); padding: 12px 2px; }
+.rec-meta { font-size: .85rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
+.rec-fields { font-size: .95rem; margin: 4px 0; }
+.rec-text { margin: 4px 0; white-space: pre-wrap; }
+.rec-acts { display: flex; gap: 4px; }
+.rec-acts button {
+  border: 0; background: none; color: var(--muted); font: inherit; font-size: .88rem;
+  min-height: 40px; padding: 0 10px; cursor: pointer; border-radius: 8px;
+}
+
+/* ---- タイマー ---- */
+.timer { display: flex; align-items: center; gap: 16px; margin: 16px 0; }
+.timer svg { width: 96px; height: 96px; transform: rotate(-90deg); flex: none; }
+.timer circle { fill: none; stroke-width: 7; }
+.timer-bg { stroke: var(--line); }
+.timer-fg { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .25s linear; }
+.timer-side { flex: 1; }
+.timer-side .btn { margin: 0; }
+.timer-left { font-size: .82rem; color: var(--muted); margin: 4px 0 0; font-variant-numeric: tabular-nums; }
+.timer-msg { font-size: .9rem; color: var(--accent); margin: 2px 0 0; min-height: 1.4em; }
+.timer.done svg { animation: soft 2.4s ease-in-out 2; }
+@keyframes soft { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .timer.done svg { animation: none; } }
+
+/* ---- 一秒後の問いのメモ ---- */
+.pause-memo { width: 100%; margin: 0 0 8px; }
+.pause-memo textarea { margin-bottom: 8px; }
+
+[hidden] { display: none !important; }

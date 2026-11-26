@@ -134,7 +134,77 @@
       " " + two(d.getHours()) + ":" + two(d.getMinutes());
   }
 
+  /* ---- タイマー ----
+     残り時間は小さな数字で、主には円の減り方で見せます。
+     終わったら、短い振動(できる端末だけ)と、円のやわらかい変化で知らせます。音は出しません。 */
+  var running = [];
+  function stopTimers() {
+    running.forEach(function (t) { clearInterval(t); });
+    running = [];
+  }
+
+  function timer(seconds, ui) {
+    var CIRC = 2 * Math.PI * 52;
+    var box = html(
+      '<div class="timer">' +
+        '<svg viewBox="0 0 120 120" aria-hidden="true">' +
+          '<circle class="timer-bg" cx="60" cy="60" r="52"></circle>' +
+          '<circle class="timer-fg" cx="60" cy="60" r="52" stroke-dasharray="' + CIRC.toFixed(1) + '" stroke-dashoffset="0"></circle>' +
+        "</svg>" +
+        '<div class="timer-side">' +
+          '<button type="button" class="btn timer-btn">' + rich(ui.timer.start) + "</button>" +
+          '<p class="timer-left" aria-live="off"></p>' +
+          '<p class="timer-msg" role="status" aria-live="polite"></p>' +
+        "</div>" +
+      "</div>"
+    ).firstElementChild;
+
+    var fg = box.querySelector(".timer-fg");
+    var btn = box.querySelector(".timer-btn");
+    var left = box.querySelector(".timer-left");
+    var msg = box.querySelector(".timer-msg");
+    var total = seconds * 1000, remain = total, endAt = 0, iv = null;
+
+    function two(n) { return (n < 10 ? "0" : "") + n; }
+    function draw() {
+      fg.setAttribute("stroke-dashoffset", String(CIRC * (1 - remain / total)));
+      var s = Math.ceil(remain / 1000);
+      left.textContent = ui.timer.left + " " + Math.floor(s / 60) + ":" + two(s % 60);
+    }
+    function halt() {
+      if (iv) { clearInterval(iv); running = running.filter(function (x) { return x !== iv; }); iv = null; }
+    }
+    draw();
+
+    btn.addEventListener("click", function () {
+      if (iv) {
+        remain = Math.max(0, endAt - Date.now());
+        halt();
+        btn.innerHTML = rich(ui.timer.resume);
+        return;
+      }
+      if (remain <= 0) { remain = total; box.classList.remove("done"); msg.textContent = ""; }
+      endAt = Date.now() + remain;
+      btn.innerHTML = rich(ui.timer.pause);
+      iv = setInterval(function () {
+        remain = Math.max(0, endAt - Date.now());
+        draw();
+        if (remain <= 0) {
+          halt();
+          box.classList.add("done");
+          btn.innerHTML = rich(ui.timer.again);
+          msg.textContent = ui.timer.done;
+          try { if (navigator.vibrate) navigator.vibrate([160, 100, 160]); } catch (e) { /* 何もしない */ }
+        }
+      }, 250);
+      running.push(iv);
+    });
+    return box;
+  }
+
   window.R = {
+    timer: timer,
+    stopTimers: stopTimers,
     esc: esc,
     rich: rich,
     html: html,
